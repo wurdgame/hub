@@ -25,9 +25,9 @@ async function validWord(word) {
   }
 }
 
-let valid = validWord('wurd');
+// let valid = validWord('wurd');
 // let valid = validWord('test');
-console.log(valid);
+// console.log(valid);
 // console.log(validWord('test'));
 
 
