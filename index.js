@@ -16,13 +16,14 @@ const validWord = require('./dictionary');
 const queue = {
   submissions: {},
   playerCount: 0,
+  playAgainCount: 0,
   addSubmission: function (payload) {
     // function to add submissions to queue
     // adds id: word pair
-    this.submissions.payload.id = payload.word; // placeholder
-    console.log(this.submissions.payload);
+    this.submissions[payload.userName] = payload; // placeholder
+    // console.log(this.submissions.payload);
   },
-  removeSubmission: function (id) {
+  removeSubmissions: function () {
     //function to remove submissions once the round winner has been determined
     this.submissions = {}; // clear all submissions
   },
@@ -33,8 +34,8 @@ class Wurd {
   constructor() {
     this.roundId = uuid();
     this.letters = randomString.generate({
-      length: 8,
-      charset: `${randomWords({ exactly: 1, maxLength: 8 })}`,
+      length: 12,
+      charset: `${randomWords({ exactly: 3, maxLength: 4, join: '' })}`,
     });
   }
 }
@@ -52,9 +53,14 @@ wurd.on('connection', (socket) => {
   });
 
   socket.on('newround', payload => {
-    payload = new Wurd;
-    wurd.emit('newround', payload);
+    console.log(`${payload.name} wants to play again`);
+    queue.playAgainCount += 1;
 
+    if (queue.playAgainCount === 2) {
+      payload = new Wurd;
+      wurd.emit('gamestart', payload);
+      queue.playAgainCount = 0;
+    }
   });
 
   socket.on('disconnect', () => {
@@ -67,29 +73,52 @@ wurd.on('connection', (socket) => {
     //do something with the submissions so we can determine the winner
     // need queue to keep track of submissions
     queue.addSubmission(payload); // add payload to queue
+    console.log(queue.submissions);
     //check if the number of submissions in the queue match the number of players, if so, determine a winner
     if (Object.keys(queue.submissions).length === queue.playerCount) {
-      let validWords = []; // track valid words
-      Object.entries(queue.submissions).forEach((submission) => {  // needs fixing - iterate through each submission and check if word is valid
-        let isValid = validWord(submission.word);
-        if (isValid) {
-          // add valid word to array of valid words
-          validWords.push(submission);
+      // let validWords = []; // track valid words
+      // iterate through each submission and check if word is valid
+      let winner;
+      let longest = 0;
+      let word;
+      Object.keys(queue.submissions).forEach((key) => {
+        let answer = queue.submissions[key].answer;
+        let currentPlayer = queue.submissions[key].userName;
+
+        if (answer.length > longest) {
+          longest = answer.length;
+          winner = currentPlayer;
+          word = answer;
+        } else if (answer.length === longest) {
+          winner = 'TIED';
         }
+
+
       });
-      // check how many valid words, sort by length if multiple are valid
-      if (validWords.length === 0) {
-        payload = 'You\'re all wrong';
-      } else if (validWords.length === 1) {
-        payload = `The winner is player ${validWords[0][0]} with the word ${validWords[0][1]}`; // display id and winning word
+      if (winner === 'TIED') {
+        console.log(`You Tied`);  
       } else {
-        // determine winner by sorting wurd lengths if only 2 users
-        payload = checkWurdLength(validWords);
+        console.log(`${winner} WINS with ${word}!`);
       }
-    }
-    //validate for each word send check via dictionaryAPI, if valid, longest length wins, if same length, tie.
-    wurd.emit('winner', payload);
+
+      queue.removeSubmissions();
+      console.log('SUBMISSIONS', queue.submissions);
+      wurd.emit('playagain');
+    }  
   });
+      // check how many valid words, sort by length if multiple are valid
+    //   if (validWords.length === 0) {
+    //     payload = 'You\'re all wrong';
+    //   } else if (validWords.length === 1) {
+    //     payload = `The winner is player ${validWords[0][0]} with the word ${validWords[0][1]}`; // display id and winning word
+    //   } else {
+    //     // determine winner by sorting wurd lengths if only 2 users
+    //     payload = checkWurdLength(validWords);
+    //   }
+    // }
+    // //validate for each word send check via dictionaryAPI, if valid, longest length wins, if same length, tie.
+    // wurd.emit('winner', payload);
+  // });
 
   function readyCheck() {
     console.log('made it into readyCHeck function');
@@ -107,9 +136,9 @@ wurd.on('connection', (socket) => {
     let winner;
 
     if (arr[0][1] > arr[1][1].length) {
-      winner = `${arr[0][0]}`; // winner id
-    } else if (arr[0][1].length < arr[1][1].length) {
-      winner = `${arr[1][0]}`; // winner id
+      winner = `The winner is ${arr[0][0]}!`; // winner userName
+    } else if (arr[0][1].length < arr[1][3].length) {
+      winner = `The winner is ${arr[1][3]}!`; // winner userName
     } else {
       winner = 'It\'s a draw!';
     }
