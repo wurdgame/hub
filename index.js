@@ -5,11 +5,19 @@ const uuid = require('uuid').v4;
 const socketio = require('socket.io');
 const randomWords = require('random-words');
 const randomString = require('randomstring');
+const express = require('express');
 
 
 const PORT = process.env.PORT || 3000;
-const server = socketio(PORT);
-const wurd = server.of('/wurd');
+
+const INDEX = '/index.html';
+
+const server = express()
+  .use((req, res) => res.sendFile(INDEX, { root: __dirname }))
+  .listen(PORT, () => console.log(`Listening on ${PORT}`));
+
+const io = socketio(server);
+const wurd = io.of('/wurd');
 
 //this would be to use dictionary API to validate word
 // const validWord = require('./dictionary');
