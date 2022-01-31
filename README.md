@@ -6,7 +6,7 @@ Wurdgame is a 2 player word game using Socket.io. The game begins when two playe
 
 ## Deployed URL
 
-- [Wurd]()
+- [Wurd](https://wurdgame.herokuapp.com/)
 
 ## Hub Responsibilties
 
